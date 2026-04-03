@@ -1,16 +1,17 @@
+import { ButtonType } from '@/types/button';
 import React from 'react'
 import { Pressable, StyleSheet, Text } from 'react-native'
 
-type Props = {
-  label    : string;
-  onClick  : () => void;
-  selected : boolean;
-};
+type Props = ButtonType;
 
 const Default = ({
   label,
   onClick,
   selected,
+  borderless,
+  bgTransparent,
+  Icon,
+  fontSize
 }:Props) => {
 
   const containerStyle = selected ? [style.container, style.container__selected] : style.container;
@@ -18,10 +19,15 @@ const Default = ({
   
   return (
     <Pressable 
-    style={containerStyle}
+    style={[containerStyle , 
+      borderless ? { borderWidth: 0, paddingHorizontal: 0 } : undefined, 
+      bgTransparent ? { backgroundColor: '#ffffff00' } : undefined  
+    ]}
     onPress={onClick}
     >
-      <Text style={textStyle}>
+      {Icon && <Icon/>}
+
+      <Text style={[textStyle, fontSize === 'XS' ? { fontSize: 12 } : undefined]}>
         { label }
       </Text>
     </Pressable>
@@ -32,10 +38,14 @@ const style = StyleSheet.create({
   container: {
     borderWidth: 1,
     borderRadius: 20,
+    flexDirection: 'row',
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderColor: 'darkorange',
     backgroundColor: '#fff8e6',
-    padding: 8,
-    alignItems: 'center',
   },
 
   text: {
@@ -46,10 +56,14 @@ const style = StyleSheet.create({
   container__selected: {
     borderWidth: 1,
     borderRadius: 20,
+    flexDirection: 'row',
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderColor: 'darkorange',
     backgroundColor: 'darkorange',
-    padding: 8,
-    alignItems: 'center',
   },
 
   text__selected: {

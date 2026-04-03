@@ -1,11 +1,11 @@
 export const contact = [
   { 
     value: 'mostRecentAdded', 
-    label: 'Mais recente adicionado' 
+    label: 'Mais recentes' 
   },
   { 
     value: 'mostOldAdded',
-    label: 'Mais antigo adicionado' 
+    label: 'Mais antigos' 
   },
 ] as const;
 

@@ -7,6 +7,7 @@ import Entypo from '@expo/vector-icons/Entypo';
 import { selectOptionsSchemaMap } from '@/constants/maps/selectOptionsSchemaMap';
 import { Button } from '../button';
 import { ContactFilterValue } from '@/types/contactFIlterValue';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 type Props = {
   iconOnly?      : boolean;
@@ -33,7 +34,7 @@ const Filter = ({
     CONTACT: 'contato',
   };
 
-  const handleSelect = (value: ContactFilterValue) => {
+  const handleSelect = (value: ContactFilterValue | null) => {
     setFilterValue(value);
     setShowOptions(false);
   };
@@ -92,13 +93,29 @@ const Filter = ({
       onPress={() => setShowOptions(false)}
       >
         <View style={style.modal_container}>
-          <Text style={style.modal_title}>
-            Filtros de { titleMap[optionsSchema] }
-          </Text>
+          <View style={style.modal_title_and_close_button_container}>
+            <Text style={style.modal_title}>
+              Filtros de { titleMap[optionsSchema] }
+            </Text>
+
+            <Pressable onPress={() => setShowOptions(false)}>
+              <AntDesign 
+                name="close" 
+                size={18} 
+                color={style.modal_title.color}
+              />
+            </Pressable>
+          </View>
 
           <Text style={style.modal_message}>
             Selecione um filtro.
           </Text>
+
+          <Button.Default
+            selected={!filterValue}
+            label={'Nenhum'}
+            onClick={() => handleSelect(null)}
+          />
 
           <FlatList
             data={optionsSchemaRender}
@@ -144,9 +161,14 @@ const style = StyleSheet.create({
   },
 
   modal_title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 700,
     color: 'darkorange',
+  },
+
+  modal_title_and_close_button_container: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 });
 
