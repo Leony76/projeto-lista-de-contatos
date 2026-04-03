@@ -33,6 +33,7 @@ const style = StyleSheet.create({
 
   message: {
     color: 'orange',
+    textAlign: 'center',
   },
 });
 

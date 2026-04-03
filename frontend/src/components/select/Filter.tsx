@@ -41,46 +41,54 @@ const Filter = ({
 
   return (
     <>
-    <View style={[defaultStyle.container, customStyle]}>
-      {!iconOnly ? (
-        <>
-          <Feather 
-            name="filter" 
-            size={18} 
-            color={defaultStyle.select.color} 
-          />
-      
-          <Pressable
-          onPress={() => setShowOptions(true)}
-          style={defaultStyle.select}
-          >
-            <Text style={defaultStyle.select_text}>
-              Filtro
-            </Text>
-          </Pressable>
-
-          <Entypo 
-            name="chevron-down" 
-            size={18} 
-            color={defaultStyle.select.color} 
-          />
-        </>
-      ) : (
+    {!iconOnly ? (
+      <View style={[defaultStyle.container, customStyle]}>
+        <Feather 
+          name="filter" 
+          size={18} 
+          color={'darkorange'} 
+        />
+    
         <Pressable
         onPress={() => setShowOptions(true)}
-        style={defaultStyle.select}
+        style={({ pressed }) => [
+          style.select_text,
+          {
+            filter    : [{ brightness: pressed ? 1.2 : 1 }],
+            transform : [{ scale: pressed ? 0.9 : 1 }],
+          }
+        ]}
         >
           <Text style={defaultStyle.select_text}>
-            <Feather 
-              name="filter" 
-              size={18} 
-              color={defaultStyle.select.color} 
-            />
+            Filtro
           </Text>
         </Pressable>
-      )}
 
-    </View>
+        <Entypo 
+          name="chevron-down" 
+          size={18} 
+          color={'darkorange'} 
+        />
+      </View>
+    ) : (
+      <Pressable
+      onPress={() => setShowOptions(true)}
+      style={({ pressed }) => [
+        defaultStyle.select,
+        {
+          filter    : [{ brightness: pressed ? 1.2 : 1 }],
+          transform : [{ scale: pressed ? 0.9 : 1 }],
+        }
+      ]}
+      >
+        <Feather 
+          name="filter" 
+          size={18} 
+          color={'darkorange'} 
+        />
+      </Pressable>
+    )}
+
 
     <Modal
     visible={showOptions}
@@ -156,7 +164,7 @@ const style = StyleSheet.create({
   },
 
   modal_message: {
-    color: 'gray',
+    color: 'darkorange',
     marginBottom: 8,
   },
 
@@ -169,6 +177,11 @@ const style = StyleSheet.create({
   modal_title_and_close_button_container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+
+  select_text: {
+    paddingVertical: 10, 
+    paddingHorizontal: 10, 
   },
 });
 

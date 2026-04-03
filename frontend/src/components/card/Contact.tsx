@@ -1,10 +1,12 @@
 import { Contact as ContactType } from '@/types/contact';
 import Entypo from '@expo/vector-icons/Entypo';
-import React from 'react'
+import React, { useState } from 'react'
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
 import { Button } from '../button';
+import { generateRandomProfilePhotoPlaceholderBgColor } from '@/utils/generateRandomProfilePhotoPlaceholderBgColor';
+import { Modal } from '../modal';
 
 type Props = ContactType & {
   moreActionsVisible: boolean;
@@ -24,47 +26,64 @@ const Contact = ({
   onClick,
 }:Props) => {
 
-  const noProfilePhotoBgColorsPalette = ['#FFC0CB', '#87CEEB', '#FFD700', '#FFA500', '#90EE90', '#D3D3D3', '#ffb3b3'];
+  const backgroundColorPlaceholder: string = generateRandomProfilePhotoPlaceholderBgColor(name);
+  const [imageExpand, setImageExpand] = useState<boolean>(false);
 
-  const getColorIndex = () => {
-    const charSum = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return charSum % noProfilePhotoBgColorsPalette.length;
-  };
-
-  const backgroundColorPlaceholder = noProfilePhotoBgColorsPalette[getColorIndex()];
+  const contactName: string = name ? name.trim().length > 15 ? name.slice(0, 15) + '...' : name : '[ Nome não informado ]';
+  const contactPhone: string = phone ? phone.trim().length > 15 ? phone.slice(0, 15) + '...' : phone : '[ Número não informado ]';
+  const contactPhoto: string = name ? name[0].toUpperCase() : '?'
 
   return (
+    <>
+    <Modal.ImageExpand
+      visible={imageExpand}
+      onRequestClose={() => setImageExpand(false)}
+      image={profilePhoto}
+      name={name}
+    />
+
     <View style={style.container}>
       <View style={style.main_content}>
         { profilePhoto ? (
-          <Image 
-            style={style.profile_image}
-            source={
-              typeof profilePhoto === "string"
-              ? { uri: profilePhoto }
-              : profilePhoto
-            }
-          />
+          <Pressable onPress={() => setImageExpand(true)}>
+            <Image 
+              style={style.profile_image}
+              source={
+                typeof profilePhoto === "string"
+                ? { uri: profilePhoto }
+                : profilePhoto
+              }
+            />
+          </Pressable>
         ) : (
-          <View style={[style.no_profile_photo, { backgroundColor: backgroundColorPlaceholder }]}>
-            <Text style={style.no_profile_photo_text}>
-              { name[0].toUpperCase() }
-            </Text>
-          </View>
+          <Pressable onPress={() => setImageExpand(true)}>
+            <View style={[style.no_profile_photo, { backgroundColor: backgroundColorPlaceholder }]}>
+              <Text style={style.no_profile_photo_text}>
+                { contactPhoto }
+              </Text>
+            </View>
+          </Pressable>
         )}
 
         <View style={style.contact_name_and_phone_container}>
           <Text style={style.contact_name_text}>
-            { name }
+            { contactName }
           </Text>
 
           <Text style={style.contact_phone_text}>
-            { phone }
+            { contactPhone }
           </Text>
         </View>
 
         <View style={style.contact_more_options_container}>
-          <Pressable onPress={onClick.call}>
+          <Pressable 
+          onPress={onClick.call}
+          style={({ pressed }) => [{
+            padding: 10,
+            filter    : [{ brightness: pressed ? 1.2 : 1 }],
+            transform : [{ scale: pressed ? 0.9 : 1 }],
+          }]}
+          >
             <Feather 
               name="phone-call" 
               size={20} 
@@ -72,7 +91,16 @@ const Contact = ({
             />
           </Pressable>
           
-          <Pressable onPress={onClick.moreActions}>
+          <Pressable 
+          onPress={onClick.moreActions}
+          style={({ pressed }) => [
+            {
+              padding: 10,
+              filter    : [{ brightness: pressed ? 1.2 : 1 }],
+              transform : [{ scale: pressed ? 0.9 : 1 }],
+            }
+          ]}
+          >
             <Entypo 
               name="dots-three-vertical" 
               size={20} 
@@ -85,25 +113,28 @@ const Contact = ({
       { moreActionsVisible && 
         <View style={style.more_actions_container}>
           <Button.Default
-            label='Editar contato'
+            label='Editar'
             onClick={onClick.edit}
-            Icon={() => <AntDesign name="edit" size={18} color="darkorange" />}
+            Icon={() => <AntDesign name="edit" size={20} color="darkorange" />}
             borderless
             bgTransparent
-            fontSize='XS'
+            fontSize='SM'
+            pVertical={8}
           />
 
           <Button.Default
-            label='Remover contato'
+            label='Remover'
             onClick={onClick.remove}
-            Icon={() => <AntDesign name="user-delete" size={18} color="darkorange" />}
+            Icon={() => <AntDesign name="user-delete" size={20} color="darkorange" />}
             borderless
             bgTransparent
-            fontSize='XS'
+            fontSize='SM'
+            pVertical={8}
           />
         </View>
       }
     </View>
+    </>
   )
 }
 
@@ -114,14 +145,14 @@ const style = StyleSheet.create({
     borderColor: '#ffd484',
     borderRadius: 32,
     paddingVertical: 6,
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     backgroundColor: '#fff9ee',
   },
   
   profile_image: {
     width: 50,
     height: 50,
-    borderRadius: '50%',
+    borderRadius: 25,
     borderWidth: 1,
     borderColor: 'darkorange',
   },
@@ -136,14 +167,12 @@ const style = StyleSheet.create({
   },
   
   contact_phone_text: {
-    color: 'gray',
+    color: 'orange',
   },
   
   contact_more_options_container: {
     flexDirection: 'row',
-    gap: 12,
-    marginLeft: 'auto',
-    marginRight: 10,
+    marginLeft: 'auto',    
   },
 
   main_content: {
@@ -155,10 +184,7 @@ const style = StyleSheet.create({
   more_actions_container: {
     gap: 10,
     backgroundColor: 'white',
-    borderBottomLeftRadius: 26,
-    borderBottomRightRadius: 26,
-    borderTopRightRadius: 8,
-    borderTopLeftRadius: 8,
+    borderRadius: 26,
     borderWidth: 1,
     borderColor: '#ffd484',
     flexDirection: 'row',
@@ -168,7 +194,7 @@ const style = StyleSheet.create({
   no_profile_photo: {
     width: 50,
     height: 50,
-    borderRadius: '50%',
+    borderRadius: 25,
     borderWidth: 1,
     borderColor: 'darkorange',
     justifyContent: 'center',

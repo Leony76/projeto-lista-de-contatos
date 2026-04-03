@@ -1,5 +1,5 @@
 import { Input } from '@/components/input';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
@@ -7,6 +7,7 @@ import { Button } from '@/components/button';
 import { ModalType } from '..';
 import { ContactService } from '@/services/contactService';
 import { Contact } from '@/types/contact';
+import { formatPhoneNumber } from '@/utils/formatPhoneNumber';
 
 type Props = ModalType & {
   onSuccess: () => void;
@@ -25,7 +26,6 @@ const NewContact = ({
 
   const handleNewContact = async():Promise<void> => {
     try { 
-
       const payload: Pick<Contact, 'phone' | 'name'> = {
         name  : newContact.name,
         phone : newContact.phone,
@@ -40,11 +40,20 @@ const NewContact = ({
 
       onSuccess();
     } catch (error: unknown) {  
-      console.log("Houve um erro ao adicionar o contato!: " + error);
+      console.error("Houve um erro ao adicionar o contato!: " + error);
     } finally {
       onRequestClose();
     }
   };
+
+  const noData: boolean = (!newContact.name || newContact.phone.trim().length !== 15);
+
+  useEffect(() => {
+    setNewContact({
+      name: '',
+      phone: '',
+    });
+  },[visible]);
 
   return (
     <Modal
@@ -64,7 +73,15 @@ const NewContact = ({
                 Novo Contato
               </Text>
 
-              <Pressable onPress={onRequestClose}>
+              <Pressable 
+              onPress={onRequestClose}
+              style={({ pressed }) => [{
+                marginRight: -8,
+                padding: 12,
+                filter    : [{ brightness: pressed ? 1.2 : 1 }],
+                transform : [{ scale: pressed ? 0.9 : 1 }],
+              }]}
+              >
                 <AntDesign 
                   name="close" 
                   size={18} 
@@ -80,22 +97,29 @@ const NewContact = ({
             <View style={style.inputs_container}>
               <Input.Default
                 onChange={(name) => setNewContact(prev => ({ ...prev, name }))}
-                placeholder='Nome do contato'
+                maxLength={15}
+                label='Nome do contato (Até 15 caracteres)'
+                placeholder='Cicrano de Tal'
                 value={newContact.name}
-                label='Nome'
                 Icon={() => <AntDesign name="tag" size={18} color="darkorange" />}
               />
 
               <Input.Default
-                onChange={(phone) => setNewContact(prev => ({ ...prev, phone }))}
-                placeholder='Número de telefone'
+                label='Número de telefone'
+                placeholder='(XX) XXXXX-XXXX'
+                maxLength={15}
+                keyboardType='phone-pad'
                 value={newContact.phone}
-                label='Número'
                 Icon={() => <Feather name="phone" size={18} color="darkorange" />}
+                onChange={(phone) => {
+                  const formatted = formatPhoneNumber(phone);
+                  setNewContact(prev => ({ ...prev, phone: formatted }));
+                }}
               />
             </View>
             
             <Button.Default
+              disable={ noData }
               label='Adicionar'
               Icon={() => <AntDesign name="user-add" size={18} color="darkorange" />}
               onClick={handleNewContact}
@@ -119,14 +143,16 @@ const style = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 20,
     borderWidth: 1,
+    width: 315,
     borderColor: '#ffc689',
     paddingHorizontal: 10,
-    paddingVertical: 14,
-    gap: 8,
+    paddingBottom: 14,
+    paddingTop: 6,
+    gap: 6,
   },
 
   form_title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 700,
     color: 'darkorange',
   },
@@ -143,7 +169,8 @@ const style = StyleSheet.create({
   },
 
   form_message: {
-    color: '#b2b2b2',
+    color: 'orange',
+    marginBottom: 8,
   },
 });
 

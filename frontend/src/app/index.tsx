@@ -13,12 +13,16 @@ import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import AntDesign from "@expo/vector-icons/AntDesign";
 import EmptyList from "@/components/misc/EmptyList";
-import Entypo from '@expo/vector-icons/Entypo';
+import Spinner from "@/components/misc/Spinner";
+import { Button } from "@/components/button";
 
 export default function Index() {
 
+  const [loadingPage, setLoadingPage] = useState<boolean>(true);
+
   const [contacts, setContacts] = useState<Contact[] | null>([]);
   const [contactToBeEdit, setContactToBeEdit] = useState<Omit<Contact, 'profilePhoto'> | null>(null);
+  const [contactToBeRemovedId, setContactToBeRemovedId] = useState<number | null>(null);
   const [contactToBeCalled, setContactToBeCalled] = useState<Contact | null>(null);
 
   const [activeModal, setActiveModal] = useState<HomeModals | null>();
@@ -38,6 +42,7 @@ export default function Index() {
       const data = await ContactService.read();
 
       setContacts(data);
+      setLoadingPage(false);
     } catch (error:any) {
       console.error('Houve um erro ao carregar os contatos: ' + error);
     }
@@ -53,13 +58,24 @@ export default function Index() {
     try {
       if (!id) return;
 
-      await ContactService.delete(id);
+      const updatedList = await ContactService.delete(id);
 
-      loadData();
+      setContacts(updatedList);
     } catch (error:unknown) {
       console.error(error);
     }
   };
+
+  if (loadingPage) {
+    return (
+      <View style={style.loading_full_screen}>
+        <Spinner />
+        <Text style={style.header_title}>
+          O que há na aplicação
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <>
@@ -82,6 +98,22 @@ export default function Index() {
       contact={contactToBeCalled!}
     />
 
+    <Modal.ConfirmAction
+      visible={activeModal === 'REMOVE_CONTACT_CONFIRM'}
+      confirmMessage="Tem certeza em remover este contato ?"
+      onRequestClose={() => setActiveModal(null)}
+      onClick={{
+        confirm : () => {
+          handleRemoveContact(contactToBeRemovedId!);
+          setActiveModal(null);
+        },
+        cancel  : () => {
+          setContactToBeRemovedId(null);
+          setActiveModal(null);
+        },
+      }}
+    />
+
     <LinearGradient
     colors={['#fff9ee', '#ff9d0029']}
     style={{ flex: 1 }}
@@ -91,28 +123,24 @@ export default function Index() {
           O que há na aplicação
         </Text>
 
-        <View>
-          <Pressable onPress={() => setActiveModal(prev => prev ? null : 'MORE_OPTIONS')}>
-            <Entypo 
-              name="dots-three-vertical" 
-              size={24} 
-              color={activeModal === 'MORE_OPTIONS' ? '#ffc472' : 'darkorange'} 
-            />
-          </Pressable>
-          
-          <Modal.MoreActions
-            visible={activeModal === "MORE_OPTIONS"}
-            onRequestClose={() => setActiveModal(null)}
-            buttons={[{ 
-              label   : 'Novo contato', 
-              Icon    : () => <AntDesign name="user-add" size={18} color="darkorange" />,
-              onClick : () => {
-                setActiveModal(null); 
-                setTimeout(() => setActiveModal('NEW_CONTACT'), 100);
-              },          
-            }]}
-          />
-        </View>
+        { filteredContacts.length > 0 && (
+          <Pressable 
+          style={({ pressed }) => [
+            style.header_new_contact_button,
+            {
+              filter    : [{ brightness: pressed ? 1.2 : 1 }],
+              transform : [{ scale: pressed ? 0.9 : 1 }],
+            }
+          ]}
+          onPress={() => setActiveModal('NEW_CONTACT')}
+          >
+            <AntDesign 
+              name="user-add"
+              size={20} 
+              color="orange" 
+              />
+          </Pressable>      
+        )}
       </View>
       
       <View style={style.body_container}>
@@ -132,33 +160,49 @@ export default function Index() {
           />
         </View>
         
-        <View style={style.contact_list_container}>
+        <Pressable 
+        style={style.contact_list_container}
+        onPress={() => setMoreOptions(null)}
+        >
           <FlatList
             style={{ borderRadius: 28 }}       
             data={filteredContacts}
             keyExtractor={(item) => String(item.id)}
             contentContainerStyle={{ gap: 8 }}
-            ListEmptyComponent={<EmptyList message="Nenhum contato encontrado!" />}
+            ListEmptyComponent={
+             <View style={{ gap: 16, width: '67%', alignSelf: 'center' }}>
+                <EmptyList message="Nenhum contato encontrado!" />
+
+                <Button.Default
+                  label="Novo contato"
+                  onClick={() => setActiveModal('NEW_CONTACT')}
+                  Icon={() => <AntDesign name="user-add" size={18} color="darkorange" />}
+                />
+              </View>        
+            }
             renderItem={({ item }) => (
               <Card.Contact 
                 { ...item } 
                 moreActionsVisible={item.id === moreOptions}
                 onClick={{
                   moreActions : () => setMoreOptions(prev => prev === item.id ? null : item.id),
-                  remove      : () => handleRemoveContact(item.id),
-                  call        : () => {
-                    setContactToBeCalled(item);
-                    setTimeout(() => setActiveModal("CALLING"), 1000);
+                  remove      : () => {
+                    setContactToBeRemovedId(item.id);
+                    setActiveModal("REMOVE_CONTACT_CONFIRM")
                   },
-                  edit        : () => {
+                  call : () => {
+                    setContactToBeCalled(item);
+                    setTimeout(() => setActiveModal("CALLING"), 500);
+                  },
+                  edit : () => {
                     setContactToBeEdit(item);
-                    setActiveModal('EDIT_CONTACT');
+                    setActiveModal("EDIT_CONTACT");
                   },
                 }}
               />
             )}
           />  
-        </View>
+        </Pressable>
       </View>
     </LinearGradient>
     </>
@@ -169,11 +213,20 @@ const style = StyleSheet.create({
   header_container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: 'white',
     borderBottomColor: '#ffe19476',
     borderBottomWidth: 2,
     padding: 15,
     zIndex: 1,
+  },
+
+  header_new_contact_button: {
+    backgroundColor: '#fff9ee',
+    borderRadius: 100,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: 'orange'
   },
 
   header_title: {
@@ -221,4 +274,14 @@ const style = StyleSheet.create({
   modal_overlay: {
     flex: 1,
   },
+
+  loading_full_screen: {
+    flex: 1,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999, 
+  },
 });
+
+

@@ -4,7 +4,7 @@ import { CONTACTS as initialData } from "@/datas/contact";
 
 export class ContactService {
 
-  private static readonly STORAGE_KEY = '@my_contacts';
+  private static readonly STORAGE_KEY: string = '@my_contacts';
 
   static async create(
     newContact: Omit<Contact, 'id' | 'profilePhoto'> & { profilePhoto?: string }
@@ -46,7 +46,6 @@ export class ContactService {
     return JSON.parse(data);
   };
 
-
   static async update(
     id          : number,
     updatedData : Pick<Contact, 'name' | 'phone'>
@@ -70,16 +69,16 @@ export class ContactService {
 
   static async delete(
     id : number
-  ) {
+  ): Promise<Contact[]> {
     const contacts: Contact[] = await this.read();
 
-    const deleted: Contact[] = contacts.filter(contact => contact.id !== id);
+    const remainingContacts: Contact[] = contacts.filter(contact => contact.id !== id);
 
     await AsyncStorage.setItem(
       this.STORAGE_KEY, 
-      JSON.stringify(deleted),
+      JSON.stringify(remainingContacts),
     );
 
-    return deleted;
+    return remainingContacts;
   };
 };

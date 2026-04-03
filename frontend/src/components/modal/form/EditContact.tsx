@@ -7,6 +7,7 @@ import { Button } from '@/components/button';
 import { ModalType } from '..';
 import { ContactService } from '@/services/contactService';
 import { Contact } from '@/types/contact';
+import { formatPhoneNumber } from '@/utils/formatPhoneNumber';
 
 type Props = ModalType & {
   contact   : Omit<Contact, 'profilePhoto'>;
@@ -32,7 +33,7 @@ const EditContact = ({
         phone: contact.phone,
       });
     }
-  }, [contact]);
+  }, [contact, visible]);
 
   const handleEditContact = async():Promise<void> => {
     try { 
@@ -46,11 +47,13 @@ const EditContact = ({
 
       onSuccess();
     } catch (error: unknown) {  
-      console.log("Houve um erro ao adicionar o contato!: " + error);
+      console.error("Houve um erro ao adicionar o contato!: " + error);
     } finally {
       onRequestClose();
     }
   };
+
+  const noData: boolean = (!newContact.name || newContact.phone.trim().length !== 15);
 
   return (
     <Modal
@@ -70,7 +73,15 @@ const EditContact = ({
                 Editar Contato
               </Text>
 
-              <Pressable onPress={onRequestClose}>
+              <Pressable 
+              onPress={onRequestClose}
+              style={({ pressed }) => [{
+                marginRight: -8,
+                padding: 12,
+                filter    : [{ brightness: pressed ? 1.2 : 1 }],
+                transform : [{ scale: pressed ? 0.9 : 1 }],
+              }]}
+              >
                 <AntDesign 
                   name="close" 
                   size={18} 
@@ -85,23 +96,30 @@ const EditContact = ({
 
             <View style={style.inputs_container}>
               <Input.Default
+                label='Nome do contato (Até 15 caracteres)'
+                placeholder='Fulano de tal'
                 onChange={(name) => setNewContact(prev => ({ ...prev, name }))}
-                placeholder='Nome do contato'
+                maxLength={15}
                 value={newContact.name}
-                label='Nome'
                 Icon={() => <AntDesign name="tag" size={18} color="darkorange" />}
               />
 
               <Input.Default
-                onChange={(phone) => setNewContact(prev => ({ ...prev, phone }))}
-                placeholder='Número de telefone'
+                placeholder='(XX) XXXXX-XXXX'
+                maxLength={15}
+                keyboardType='phone-pad'
                 value={newContact.phone}
-                label='Número'
+                label='Número de telefone'
                 Icon={() => <Feather name="phone" size={18} color="darkorange" />}
+                onChange={(phone) => {
+                  const formatted = formatPhoneNumber(phone);
+                  setNewContact(prev => ({ ...prev, phone: formatted }));
+                }}
               />
             </View>
             
             <Button.Default
+              disable={ noData }
               label='Editar'
               Icon={() => <AntDesign name="edit" size={18} color="darkorange" />}
               onClick={handleEditContact}
@@ -122,17 +140,19 @@ const style = StyleSheet.create({
   },
 
   container: {
+    width: 315,
     backgroundColor: 'white',
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#ffc689',
     paddingHorizontal: 10,
-    paddingVertical: 14,
-    gap: 8,
+    paddingBottom: 14,
+    paddingTop: 6,
+    gap: 6,
   },
 
   form_title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 700,
     color: 'darkorange',
   },
@@ -149,7 +169,8 @@ const style = StyleSheet.create({
   },
 
   form_message: {
-    color: '#b2b2b2',
+    color: 'orange',
+    marginBottom: 8,
   },
 });
 

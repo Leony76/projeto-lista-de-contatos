@@ -8,6 +8,8 @@ type Props = {
   label?        : string;     
   placeholder   : string;
   value         : string | null;
+  keyboardType?: 'default' | 'numeric' | 'phone-pad'; 
+  maxLength?    : number; 
   customStyle?: { 
     flex: number;
   };
@@ -16,10 +18,12 @@ type Props = {
 const Default = ({
   customStyle,
   placeholder,
+  maxLength,
   onChange,
   label,
   Icon,
   value,
+  keyboardType = 'default',
 }:Props) => {
   return (
     <View style={style.container}>
@@ -35,9 +39,11 @@ const Default = ({
         <TextInput 
           onChangeText={onChange}
           value={value ?? ''}
+          maxLength={maxLength}
+          keyboardType={keyboardType} 
           style={[defaultStyle.input, { paddingVertical: 8 }]}
           placeholder={placeholder}
-          placeholderTextColor={'darkorange'}
+          placeholderTextColor={'#ffd64e'}
         />
       </View>
     </View>

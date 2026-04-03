@@ -7,11 +7,15 @@ type Props = ButtonType;
 const Default = ({
   label,
   onClick,
+  flex,
   selected,
   borderless,
+  pHorizontal,
+  pVertical,
   bgTransparent,
   Icon,
-  fontSize
+  fontSize,
+  disable = false,
 }:Props) => {
 
   const containerStyle = selected ? [style.container, style.container__selected] : style.container;
@@ -19,9 +23,18 @@ const Default = ({
   
   return (
     <Pressable 
-    style={[containerStyle , 
-      borderless ? { borderWidth: 0, paddingHorizontal: 0 } : undefined, 
-      bgTransparent ? { backgroundColor: '#ffffff00' } : undefined  
+    disabled={disable}
+    style={({ pressed }) => [
+      containerStyle, 
+      borderless    ? { borderWidth: 0, paddingHorizontal: 0 } : undefined, 
+      bgTransparent ? { backgroundColor: '#ffffff00' }       : undefined,
+      pHorizontal   ? { paddingHorizontal: pHorizontal }       : undefined,
+      pVertical     ? { paddingVertical: pVertical }           : undefined,
+      flex          ? { flex }                                 : undefined,
+      {
+        opacity: disable ? 0.5 : 1,
+        transform: [{ scale: pressed ? 0.9 : 1 }],
+      }
     ]}
     onPress={onClick}
     >

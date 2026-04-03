@@ -1,8 +1,12 @@
-import React from 'react'
+import React, { useEffect, useState, useRef } from 'react'; 
+import { Audio } from 'expo-av'; 
 import { Modal, StyleSheet, Text, View, Image, Pressable } from 'react-native'
 import { ModalType } from '.';
 import { Contact } from '@/types/contact';
 import Feather from '@expo/vector-icons/Feather';
+import { generateRandomProfilePhotoPlaceholderBgColor } from '@/utils/generateRandomProfilePhotoPlaceholderBgColor';
+import { formatTime } from '@/utils/formatTime';
+
 
 type Props = ModalType & {
   contact: Contact;
@@ -14,17 +18,97 @@ const Calling = ({
   contact,
 }:Props) => {
 
-  const noProfilePhotoBgColorsPalette = ['#FFC0CB', '#87CEEB', '#FFD700', '#FFA500', '#90EE90', '#D3D3D3', '#ffb3b3'];
+  const [seconds, setSeconds] = useState<number>(0);
+  const [isCalling, setIsCalling] = useState<boolean>(true);
+  const [callEnded, setCallEnded] = useState<boolean>(false);
 
-  const getColorIndex = () => {
-    if (!contact?.name) return 0;
-    const charSum = contact.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return charSum % noProfilePhotoBgColorsPalette.length;
+  const soundMap: Record<number, any> = {
+    1: require('../../../assets/audio/Cloude_Strife.mp3'),
+    2: require('../../../assets/audio/Mad_max.mp3'),
+    3: require('../../../assets/audio/Nathan_drake.mp3'),
   };
 
-  const backgroundColorPlaceholder = noProfilePhotoBgColorsPalette[getColorIndex()];
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const playSound = async(
+    forcedCallingState? : boolean
+  ):Promise<void> => {
+    try {
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+
+      const currentlyCalling = forcedCallingState !== undefined ? forcedCallingState : isCalling;
+
+      let source;
+
+      if (currentlyCalling) {
+        source = require('../../../assets/audio/Calling.mp3');
+      } else {
+        source = soundMap[contact.id] || require('../../../assets/audio/Any_contact.mp3');
+      }
+
+      const { sound } = await Audio.Sound.createAsync(source);
+      soundRef.current = sound;
+      
+      await sound.setIsLoopingAsync(true);
+      await sound.playAsync();
+    } catch (error:unknown) {
+      console.error("Erro ao tocar áudio", error);
+    }
+  }
+
+  const stopSound = async():Promise<void> => {
+    if (soundRef.current) {
+      await soundRef.current.stopAsync();
+      await soundRef.current.unloadAsync();
+      soundRef.current = null;
+    }
+  }
+
+  useEffect(() => {
+    if (visible) {
+      setIsCalling(true);
+      setSeconds(0);
+      setCallEnded(false);
+    } else {
+      stopSound();
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | ReturnType<typeof setTimeout>;
+
+    if (visible && !callEnded) {
+      if (isCalling) {
+        playSound(true); 
+
+        interval = setTimeout(() => {
+          setIsCalling(false);
+          playSound(false); 
+        }, 7000);
+      } else {
+        interval = setInterval(() => setSeconds((prev) => prev + 1), 1000);
+      }
+    }
+
+    if (callEnded) {
+      stopSound(); 
+    }
+
+    return () => {
+      if (interval) {
+        clearTimeout(interval);
+        clearInterval(interval);
+      }
+    };
+  }, [visible, isCalling, callEnded]);
 
   if (!contact) return null;
+
+  const backgroundColorPlaceholder = generateRandomProfilePhotoPlaceholderBgColor(contact.name);
 
   return (
     <Modal
@@ -35,8 +119,26 @@ const Calling = ({
     >
       <View style={style.modal_overlay}>
         <View style={style.upper_container}>
+          <Text style={style.call_timing}>
+            {isCalling && !callEnded
+              ? 'Ligando...' 
+              : callEnded
+                ? 'Encerrado'
+                : formatTime(seconds)
+            }
+          </Text>
+          
+          { callEnded && 
+            <Text style={{ color: 'darkorange' }}>
+              { formatTime(seconds) }
+            </Text>
+          }
+
           <Text style={style.contact_name}>
-            { contact.name }
+            { contact.name.trim().length > 20
+              ? contact.name.slice(0,20) + '...' 
+              : contact.name 
+            }
           </Text>
 
           { contact.profilePhoto ? (
@@ -55,16 +157,74 @@ const Calling = ({
               </Text>
             </View>
           )}
+
+          <Text style={style.contact_phone}>
+            { contact.phone }
+          </Text>
         </View>
 
         <View style={style.lower_container}>
-          <Pressable onPress={onRequestClose}>
-            <Feather 
-              name="phone-off" 
-              size={32} 
-              color="red" 
-            />
-          </Pressable>
+          { !callEnded ? (
+            <Pressable 
+            onPress={() => setCallEnded(true)}
+            style={({ pressed }) => [
+              { 
+                padding: 16,
+                transform: [{ scale: pressed ? 0.9 : 1 }],
+                backgroundColor: pressed ? '#ffe2e2' : 'transparent',
+                borderRadius: 50,
+              }
+            ]}
+            >
+              <Feather 
+                name="phone-off" 
+                size={32} 
+                color="red" 
+              />
+            </Pressable>
+          ) : (
+            <View style={style.call_again_or_end_call_container}>
+              <Pressable 
+              onPress={onRequestClose}
+              style={({ pressed }) => [
+                { 
+                  padding: 16,
+                  transform: [{ scale: pressed ? 0.9 : 1 }],
+                  backgroundColor: pressed ? '#ffe2e2' : 'transparent',
+                  borderRadius: 50,
+                }
+              ]}
+              >
+                <Feather 
+                  name="phone-missed" 
+                  size={32} 
+                  color="red" 
+                />
+              </Pressable>
+
+              <Pressable 
+              onPress={() => {
+                setCallEnded(false);
+                setIsCalling(true);
+                setSeconds(0);
+              }}
+              style={({ pressed }) => [
+                { 
+                  padding: 16,
+                  transform: [{ scale: pressed ? 0.9 : 1 }],
+                  backgroundColor: pressed ? '#d7ffca' : 'transparent',
+                  borderRadius: 50,
+                }
+              ]}
+              >
+                <Feather 
+                  name="phone-call" 
+                  size={32} 
+                  color="green" 
+                />
+              </Pressable>
+            </View>
+          )}
         </View>
       </View>
     </Modal>
@@ -73,7 +233,7 @@ const Calling = ({
 
 const style = StyleSheet.create({
   modal_overlay: {
-    backgroundColor: '#ffd485',
+    backgroundColor: '#fff9ee',
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -109,41 +269,20 @@ const style = StyleSheet.create({
     gap: 8,
   },
 
-  form_title: {
-    fontSize: 20,
-    fontWeight: 700,
-    color: 'darkorange',
-  },
-
-  inputs_container: {
-    gap: 4,
-    marginBottom: 8
-  },
-
-  form_title_and_close_form_container: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  form_message: {
-    color: '#b2b2b2',
-  },
-
   profile_image: {
     width: 150,
     height: 150,
-    borderRadius: '50%',
-    borderWidth: 1,
-    borderColor: 'darkorange',
+    borderRadius: 75,
+    borderWidth: 2,
+    borderColor: 'orange',
   },
 
   no_profile_photo: {
     width: 150,
     height: 150,
-    borderRadius: '50%',
-    borderWidth: 1,
-    borderColor: 'darkorange',
+    borderRadius: 75,
+    borderWidth: 2,
+    borderColor: 'orange',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -158,7 +297,26 @@ const style = StyleSheet.create({
   contact_name: {
     fontSize: 24,
     fontWeight: 600,
+    color: 'orange',
   },
+
+  call_timing: {
+    color: 'darkorange',
+    fontSize: 15
+  },
+
+  contact_phone: {
+    color: 'darkorange',
+    fontWeight: 600,
+    fontSize: 16,
+    marginTop: 10,
+  },
+
+  call_again_or_end_call_container: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  }
 });
 
 export default Calling
