@@ -7,7 +7,7 @@ export class ContactService {
   private static readonly STORAGE_KEY: string = '@my_contacts';
 
   static async create(
-    newContact: Omit<Contact, 'id' | 'profilePhoto'> & { profilePhoto?: string }
+    newContact: Omit<Contact, 'id'>
   ): Promise<Contact[]> {
 
     const contacts: Contact[] = await this.read();
@@ -17,9 +17,11 @@ export class ContactService {
       : 1
     ;
     
+    const newEntry: Contact = { ...newContact, id };
+
     const payload: Contact[] = [
       ...contacts, 
-      { ...newContact, id } as Contact
+      newEntry,
     ];
 
     await AsyncStorage.setItem(
@@ -48,7 +50,7 @@ export class ContactService {
 
   static async update(
     id          : number,
-    updatedData : Pick<Contact, 'name' | 'phone'>
+    updatedData: Partial<Contact>
   ): Promise<Contact[]> {
 
     const contacts: Contact[] = await this.read();

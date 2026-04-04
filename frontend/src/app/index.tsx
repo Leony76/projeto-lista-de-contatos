@@ -21,7 +21,7 @@ export default function Index() {
   const [loadingPage, setLoadingPage] = useState<boolean>(true);
 
   const [contacts, setContacts] = useState<Contact[] | null>([]);
-  const [contactToBeEdit, setContactToBeEdit] = useState<Omit<Contact, 'profilePhoto'> | null>(null);
+  const [contactToBeEdit, setContactToBeEdit] = useState<Contact | null>(null);
   const [contactToBeRemovedId, setContactToBeRemovedId] = useState<number | null>(null);
   const [contactToBeCalled, setContactToBeCalled] = useState<Contact | null>(null);
 

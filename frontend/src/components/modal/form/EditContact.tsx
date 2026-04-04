@@ -1,6 +1,6 @@
 import { Input } from '@/components/input';
 import React, { useEffect, useState } from 'react'
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Modal, Pressable, StyleSheet, Text, View, Image } from 'react-native'
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
 import { Button } from '@/components/button';
@@ -8,9 +8,10 @@ import { ModalType } from '..';
 import { ContactService } from '@/services/contactService';
 import { Contact } from '@/types/contact';
 import { formatPhoneNumber } from '@/utils/formatPhoneNumber';
+import * as ImagePicker from 'expo-image-picker';
 
 type Props = ModalType & {
-  contact   : Omit<Contact, 'profilePhoto'>;
+  contact   : Contact;
   onSuccess : () => void;
 };
 
@@ -21,9 +22,10 @@ const EditContact = ({
   onSuccess,
 }:Props) => {
 
-  const [newContact, setNewContact] = useState<Pick<Contact, 'name' | 'phone'>>({
-    name  : contact?.name ?? '',
-    phone : contact?.phone ?? '',
+  const [newContact, setNewContact] = useState<Omit<Contact, 'id'>>({
+    name         : contact?.name ?? '',
+    phone        : contact?.phone ?? '',
+    profilePhoto : contact?.profilePhoto ?? '',
   });
 
   useEffect(() => {
@@ -31,16 +33,18 @@ const EditContact = ({
       setNewContact({
         name: contact.name,
         phone: contact.phone,
+        profilePhoto : contact.profilePhoto,
       });
     }
   }, [contact, visible]);
 
   const handleEditContact = async():Promise<void> => {
     try { 
-      const payload: Omit<Contact, 'profilePhoto'> = {
-        id    : contact.id, 
-        name  : newContact.name,
-        phone : newContact.phone,
+      const payload: Contact = {
+        id           : contact.id, 
+        name         : newContact.name,
+        phone        : newContact.phone,
+        profilePhoto : newContact.profilePhoto,
       };
 
       await ContactService.update(payload.id, payload);
@@ -50,6 +54,29 @@ const EditContact = ({
       console.error("Houve um erro ao adicionar o contato!: " + error);
     } finally {
       onRequestClose();
+    }
+  };
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      alert('Precisamos de permissão para acessar suas fotos!');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true, 
+      aspect: [1, 1],
+      quality: 0.5, 
+      base64: true, 
+    });
+
+    if (!result.canceled) {
+      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      
+      setNewContact(prev => ({ ...prev, profilePhoto: base64Image }));
     }
   };
 
@@ -93,6 +120,34 @@ const EditContact = ({
             <Text style={style.form_message}>
               Informe os novos dados do contato.
             </Text>
+
+            <Pressable 
+            onPress={pickImage} 
+            style={style.contact_photo_container}
+            >
+              {newContact.profilePhoto ? (
+                <Image 
+                  style={style.selected_image}
+                  source={
+                    typeof newContact.profilePhoto === 'string' 
+                      ? { uri: newContact.profilePhoto } 
+                      : newContact.profilePhoto 
+                  } 
+                />
+              ) : (
+                <View style={{ alignItems: 'center' }}>
+                  <AntDesign 
+                    name="camera" 
+                    size={32} 
+                    color="orange" 
+                  />
+
+                  <Text style={{ color: 'orange' }}>
+                    Foto (opcional)
+                  </Text>
+                </View>
+              )}
+            </Pressable>
 
             <View style={style.inputs_container}>
               <Input.Default
@@ -170,6 +225,28 @@ const style = StyleSheet.create({
 
   form_message: {
     color: 'orange',
+    marginBottom: 8,
+  },
+
+  selected_image: {
+    width: 150,      
+    height: 150,    
+    borderRadius: 75, 
+    borderWidth: 1,
+    borderColor: 'darkorange',
+  },
+  
+  contact_photo_container: {
+    overflow: 'hidden', 
+    borderWidth: 1,
+    borderColor: 'darkorange',
+    borderRadius: 75,
+    width: 150,
+    height: 150,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFF8E6',
+    alignSelf: 'center',
     marginBottom: 8,
   },
 });
