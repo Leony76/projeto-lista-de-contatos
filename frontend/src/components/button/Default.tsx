@@ -5,18 +5,18 @@ import { Pressable, StyleSheet, Text } from 'react-native'
 type Props = ButtonType;
 
 const Default = ({
-  label,
-  onClick,
+  Icon,
   flex,
+  label,
   selected,
-  borderless,
-  pHorizontal,
   pVertical,
   bgTransparent,
-  Icon,
-  fontSize,
   disable = false,
-}:Props) => {
+  pHorizontal,
+  borderless,
+  fontSize,
+  onClick,
+}:Props): React.JSX.Element => {
 
   const containerStyle = selected ? [style.container, style.container__selected] : style.container;
   const textStyle = selected ? [style.text, style.text__selected] : style.text;

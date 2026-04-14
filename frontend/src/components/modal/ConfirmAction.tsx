@@ -18,7 +18,7 @@ const ConfirmAction = ({
   confirmMessage,
   visible,
   onClick,
-}:Props) => {
+}:Props): React.JSX.Element => {
 
   return (
     <Modal

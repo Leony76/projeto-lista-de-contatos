@@ -11,46 +11,43 @@ import { useFilterContacts } from "@/hooks/useFilterContact";
 import { ContactFilterValue } from "@/types/contactFIlterValue";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
+import ApplicationLoadingView from "@/components/misc/ApplicationLoadingView";
+import NoContactFound from "@/components/misc/NoContactFound";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import EmptyList from "@/components/misc/EmptyList";
-import Spinner from "@/components/misc/Spinner";
-import { Button } from "@/components/button";
 
-export default function Index() {
+export default function Index(): React.JSX.Element {
 
   const [loadingPage, setLoadingPage] = useState<boolean>(true);
 
-  const [contacts, setContacts] = useState<Contact[] | null>([]);
+  const [contacts, setContacts] = useState<Contact[] | null>(null);
   const [contactToBeEdit, setContactToBeEdit] = useState<Contact | null>(null);
   const [contactToBeRemovedId, setContactToBeRemovedId] = useState<number | null>(null);
   const [contactToBeCalled, setContactToBeCalled] = useState<Contact | null>(null);
 
-  const [activeModal, setActiveModal] = useState<HomeModals | null>();
+  const [activeModal, setActiveModal] = useState<HomeModals | null>(null);
   const [moreOptions, setMoreOptions] = useState<number | null>(null);
      
   const [filterValue, setFilterValue] = useState<ContactFilterValue | null>(null);
   const [searchValue, setSearchValue] = useState<string | null>(null);
 
-  const filteredContacts = contacts ? useFilterContacts(
+  const filteredContacts: Contact[] = contacts ? useFilterContacts(
     contacts,
     filterValue,
     searchValue,
   ) : [];
 
-  const loadData = async():Promise<void> => {
+  const loadData = async(): Promise<void> => {
     try {
-      const data = await ContactService.read();
+      const data: Contact[] = await ContactService.read();
 
       setContacts(data);
       setLoadingPage(false);
-    } catch (error:any) {
-      console.error('Houve um erro ao carregar os contatos: ' + error);
+    } catch (error:unknown) {
+      if (error instanceof Error) {
+        console.error('Houve um erro ao carregar os contatos: ' + error.message);
+      }
     }
   };
-
-  useEffect(() => {
-    loadData();
-  },[]);
 
   const handleRemoveContact = async(
     id : number
@@ -58,24 +55,21 @@ export default function Index() {
     try {
       if (!id) return;
 
-      const updatedList = await ContactService.delete(id);
+      const updatedList: Contact[] = await ContactService.delete(id);
 
       setContacts(updatedList);
     } catch (error:unknown) {
-      console.error(error);
+      if (error instanceof Error) {
+        console.error('Houve um erro ao remover o contato: ' + error.message);
+      }
     }
   };
 
-  if (loadingPage) {
-    return (
-      <View style={style.loading_full_screen}>
-        <Spinner />
-        <Text style={style.header_title}>
-          O que há na aplicação
-        </Text>
-      </View>
-    );
-  }
+  useEffect(() => {
+    loadData();
+  },[]);
+
+  if (loadingPage) return <ApplicationLoadingView/>;
 
   return (
     <>
@@ -125,6 +119,7 @@ export default function Index() {
 
         { filteredContacts.length > 0 && (
           <Pressable 
+          onPress={() => setActiveModal('NEW_CONTACT')}
           style={({ pressed }) => [
             style.header_new_contact_button,
             {
@@ -132,13 +127,12 @@ export default function Index() {
               transform : [{ scale: pressed ? 0.9 : 1 }],
             }
           ]}
-          onPress={() => setActiveModal('NEW_CONTACT')}
           >
             <AntDesign 
               name="user-add"
               size={20} 
               color="orange" 
-              />
+            />
           </Pressable>      
         )}
       </View>
@@ -167,19 +161,9 @@ export default function Index() {
           <FlatList
             style={{ borderRadius: 28 }}       
             data={filteredContacts}
-            keyExtractor={(item) => String(item.id)}
+            keyExtractor={(item, index) => `${item.id} - ${index}`}
             contentContainerStyle={{ gap: 8 }}
-            ListEmptyComponent={
-             <View style={{ gap: 16, width: '67%', alignSelf: 'center' }}>
-                <EmptyList message="Nenhum contato encontrado!" />
-
-                <Button.Default
-                  label="Novo contato"
-                  onClick={() => setActiveModal('NEW_CONTACT')}
-                  Icon={() => <AntDesign name="user-add" size={18} color="darkorange" />}
-                />
-              </View>        
-            }
+            ListEmptyComponent={ <NoContactFound onNewContactClick={() => setActiveModal('NEW_CONTACT')}/> }
             renderItem={({ item }) => (
               <Card.Contact 
                 { ...item } 
@@ -273,14 +257,6 @@ const style = StyleSheet.create({
 
   modal_overlay: {
     flex: 1,
-  },
-
-  loading_full_screen: {
-    flex: 1,
-    backgroundColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 999, 
   },
 });
 

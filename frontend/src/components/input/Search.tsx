@@ -18,7 +18,7 @@ const Search = ({
   onClearSearch,
   onChange,
   value,
-}:Props) => {
+}:Props): React.JSX.Element => {
   return (
     <View style={[defaultStyle.container, customStyle]}>
       <FontAwesome 

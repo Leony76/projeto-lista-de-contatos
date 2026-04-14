@@ -8,7 +8,7 @@ type Props = {
 
 const EmptyList = ({
   message,
-}:Props) => {
+}:Props): React.JSX.Element => {
   return (
     <View style={style.container}>
       <MaterialCommunityIcons 

@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Animated, Easing } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-const Spinner = () => {
+const Spinner = (): React.JSX.Element => {
   const spinValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {

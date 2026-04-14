@@ -8,7 +8,7 @@ import { ModalType } from '..';
 import { ContactService } from '@/services/contactService';
 import { Contact } from '@/types/contact';
 import { formatPhoneNumber } from '@/utils/formatPhoneNumber';
-import * as ImagePicker from 'expo-image-picker';
+import { pickImage } from '@/utils/pickImage';
 
 type Props = ModalType & {
   contact   : Contact;
@@ -20,7 +20,7 @@ const EditContact = ({
   visible,
   contact,
   onSuccess,
-}:Props) => {
+}:Props): React.JSX.Element => {
 
   const [newContact, setNewContact] = useState<Omit<Contact, 'id'>>({
     name         : contact?.name ?? '',
@@ -50,33 +50,12 @@ const EditContact = ({
       await ContactService.update(payload.id, payload);
 
       onSuccess();
-    } catch (error: unknown) {  
-      console.error("Houve um erro ao adicionar o contato!: " + error);
+    } catch (error:unknown) {  
+      if (error instanceof Error) {
+        console.error('Houve um erro ao ao adicionar o contato: ' + error.message);
+      }
     } finally {
       onRequestClose();
-    }
-  };
-
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (status !== 'granted') {
-      alert('Precisamos de permissão para acessar suas fotos!');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true, 
-      aspect: [1, 1],
-      quality: 0.5, 
-      base64: true, 
-    });
-
-    if (!result.canceled) {
-      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-      
-      setNewContact(prev => ({ ...prev, profilePhoto: base64Image }));
     }
   };
 
@@ -122,7 +101,7 @@ const EditContact = ({
             </Text>
 
             <Pressable 
-            onPress={pickImage} 
+            onPress={() => pickImage(setNewContact)} 
             style={style.contact_photo_container}
             >
               {newContact.profilePhoto ? (
@@ -167,8 +146,8 @@ const EditContact = ({
                 label='Número de telefone'
                 Icon={() => <Feather name="phone" size={18} color="darkorange" />}
                 onChange={(phone) => {
-                  const formatted = formatPhoneNumber(phone);
-                  setNewContact(prev => ({ ...prev, phone: formatted }));
+                  const formattedPhoneNumber = formatPhoneNumber(phone);
+                  setNewContact(prev => ({ ...prev, phone: formattedPhoneNumber }));
                 }}
               />
             </View>

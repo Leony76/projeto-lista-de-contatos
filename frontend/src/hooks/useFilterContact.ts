@@ -12,10 +12,10 @@ export const useFilterContacts = (
     const result: Contact[] = contacts.filter((contact) => {
       if (!searchValue) return true;
       
-      const search = searchValue.toLowerCase();
+      const search: string = searchValue.toLowerCase();
 
-      const searchByName = contact.name.toLowerCase().includes(search);
-      const searchByPhone = contact.phone.includes(search);
+      const searchByName: boolean = contact.name.toLowerCase().includes(search);
+      const searchByPhone: boolean = contact.phone.includes(search);
 
       return searchByName || searchByPhone;
     });

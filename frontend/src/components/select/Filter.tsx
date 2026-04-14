@@ -25,16 +25,16 @@ const Filter = ({
   filterValue,
   iconOnly = false,
   setFilterValue,
-}:Props) => {
+}:Props): React.JSX.Element => {
 
   const optionsSchemaRender = selectOptionsSchemaMap[optionsSchema];
-  const [showOptions, setShowOptions] = useState(false);
+  const [showOptions, setShowOptions] = useState<boolean>(false);
 
-  const titleMap = {
+  const titleMap: Record<string, string> = {
     CONTACT: 'contato',
   };
 
-  const handleSelect = (value: ContactFilterValue | null) => {
+  const handleSelect = (value: ContactFilterValue | null): void => {
     setFilterValue(value);
     setShowOptions(false);
   };

@@ -7,7 +7,6 @@ import Feather from '@expo/vector-icons/Feather';
 import { generateRandomProfilePhotoPlaceholderBgColor } from '@/utils/generateRandomProfilePhotoPlaceholderBgColor';
 import { formatTime } from '@/utils/formatTime';
 
-
 type Props = ModalType & {
   contact: Contact;
 };
@@ -16,7 +15,7 @@ const Calling = ({
   visible,
   onRequestClose,
   contact,
-}:Props) => {
+}:Props):React.JSX.Element | null => {
 
   const [seconds, setSeconds] = useState<number>(0);
   const [isCalling, setIsCalling] = useState<boolean>(true);
@@ -40,9 +39,9 @@ const Calling = ({
         soundRef.current = null;
       }
 
-      const currentlyCalling = forcedCallingState !== undefined ? forcedCallingState : isCalling;
+      const currentlyCalling: boolean = forcedCallingState !== undefined ? forcedCallingState : isCalling;
 
-      let source;
+      let source: any;
 
       if (currentlyCalling) {
         source = require('../../../assets/audio/Calling.mp3');
@@ -108,7 +107,7 @@ const Calling = ({
 
   if (!contact) return null;
 
-  const backgroundColorPlaceholder = generateRandomProfilePhotoPlaceholderBgColor(contact.name);
+  const backgroundColorPlaceholder: string = generateRandomProfilePhotoPlaceholderBgColor(contact.name);
 
   return (
     <Modal

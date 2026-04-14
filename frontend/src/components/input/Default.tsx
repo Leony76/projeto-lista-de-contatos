@@ -24,7 +24,7 @@ const Default = ({
   Icon,
   value,
   keyboardType = 'default',
-}:Props) => {
+}:Props): React.JSX.Element => {
   return (
     <View style={style.container}>
       { !!label && 

@@ -1,4 +1,4 @@
-export const formatPhoneNumber = (text: string):string => {
+export const formatPhoneNumber = (text: string): string => {
   const cleaned = text.replace(/\D/g, '');
 
   const match = cleaned.match(/^(\d{0,2})(\d{0,5})(\d{0,4})$/);

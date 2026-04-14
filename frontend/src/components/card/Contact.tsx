@@ -24,12 +24,12 @@ const Contact = ({
   profilePhoto,
   moreActionsVisible,
   onClick,
-}:Props) => {
+}:Props): React.JSX.Element => {
 
   const backgroundColorPlaceholder: string = generateRandomProfilePhotoPlaceholderBgColor(name);
   const [imageExpand, setImageExpand] = useState<boolean>(false);
 
-  const contactName: string = name ? name.trim().length > 15 ? name.slice(0, 15) + '...' : name : '[ Nome não informado ]';
+  const contactName : string = name ? name.trim().length > 15 ? name.slice(0, 15) + '...' : name : '[ Nome não informado ]';
   const contactPhone: string = phone ? phone.trim().length > 15 ? phone.slice(0, 15) + '...' : phone : '[ Número não informado ]';
   const contactPhoto: string = name ? name[0].toUpperCase() : '?'
 
